@@ -1,0 +1,33 @@
+一. 绘制原理：
+图像混合模式
+Xfermode有三个子类，马赛克采用了PorterDuffXfermode这个子类实现
+
+绘制画笔：
+paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+只在源图像和目标图像相交的地方绘制【源图像】，即只保留两个图层重叠部分的上层src的部分
+
+擦除画笔：
+paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+清除图像
+
+在onTouchEvent事件中：
+down：mTouchPath.moveTo(x, y)
+      将这个TouchPath包装到PathUnit中，放到List<PathUnit>中
+move：mTouchPath.lineTo(x, y)
+
+绘制时：
+1. 先绘制一个mTouchLayer(记录用户手指移动的路径)
+   Bitmap mTouchLayer = Bitmap.createBitmap(mImageWidth, mImageHeight, ARGB_8888);
+   Canvas canvas = new Canvas(mTouchLayer);
+   canvas.drawPath();
+   
+2. 在基于touchLayer的canvas上,绘制马赛克样片
+   canvas.drawBitmap(和马赛克样片，0, 0，绘制画笔);
+   
+3. 和原图叠加
+   Canvas result = new Canvas(mFinalBitmap);
+   result.drawBitmap(mTouchLayer, new Matrix(), new Paint());
+   
+二. 网格效果原理
+   将图片切分为一个个小的Rect(比如一行30个格子)，计算每一个Rect内部的平均像素颜色值，依次画在Canvas上。
+   平均像素颜色值算法：Rect内部所有像素分别求R、G、B总和，再除以像素个数，获取平均值
